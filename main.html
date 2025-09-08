@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhyBuy - Анализ отзывов Wildberries</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #10a37f;
+            --secondary-color: #343541;
+            --light-color: #444654;
+            --text-color: #ffffff;
+            --border-color: #4e4f60;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background-color: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .logo-icon {
+            background-color: var(--primary-color);
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .header-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 260px;
+            background-color: var(--secondary-color);
+            border-right: 1px solid var(--border-color);
+            padding: 15px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-hidden {
+            margin-left: -260px;
+        }
+        
+        .history-title {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #8e8ea0;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .history-item:hover {
+            background-color: var(--light-color);
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        .welcome-logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .welcome-title {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        
+        .welcome-subtitle {
+            font-size: 18px;
+            color: #8e8ea0;
+            margin-bottom: 30px;
+            max-width: 600px;
+        }
+        
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .example-card {
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+        }
+        
+        .example-card:hover {
+            background-color: #4a4b5a;
+        }
+        
+        .input-container {
+            padding: 15px 20px;
+            position: relative;
+        }
+        
+        .input-box {
+            display: flex;
+            align-items: center;
+            background-color: var(--light-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .input-field {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 15px;
+            color: var(--text-color);
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .send-button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 15px;
+            font-size: 16px;
+        }
+        
+        .product-card {
+            background-color: var(--light-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .product-header {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .product-image {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            background-color: white;
+            border-radius: 8px;
+        }
+        
+        .product-info {
+            flex: 1;
+        }
+        
+        .product-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .product-price {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin: 20px 0;
+        }
+        
+        .analysis-result {
+            background-color: var(--secondary-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .recommendation {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .analysis-text {
+            line-height: 1.6;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+        }
+        
+        .user-message {
+            background-color: var(--secondary-color);
+        }
+        
+        .ai-message {
+            background-color: var(--light-color);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                height: 100%;
+                z-index: 100;
+            }
+            
+            .examples {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-buttons">
+            <button class="header-btn" id="new-chat">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <div class="logo">
+            <div class="logo-icon">W</div>
+            <span>WhyBuy</span>
+        </div>
+        <div class="header-buttons">
+            <button class="header-btn" id="toggle-sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <div class="history-title">История поиска</div>
+            <div class="history-list" id="history-list">
+                <!-- История будет добавляться динамически -->
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="welcome-container" id="welcome-container">
+                    <div class="welcome-logo">
+                        <i class="fas fa-smile"></i>
+                    </div>
+                    <h1 class="welcome-title">Добро пожаловать в WhyBuy</h1>
+                    <p class="welcome-subtitle">Проанализируем отзывы на товары с Wildberries и поможем принять решение о покупке</p>
+                    
+                    <div class="examples">
+                        <div class="example-card" data-article="123456789">
+                            <i class="fas fa-tshirt"></i> Проанализировать футболку (арт. 123456789)
+                        </div>
+                        <div class="example-card" data-article="987654321">
+                            <i class="fas fa-mobile-alt"></i> Проанализировать смартфон (арт. 987654321)
+                        </div>
+                        <div class="example-card" data-article="456123789">
+                            <i class="fas fa-shoe-prints"></i> Проанализировать кроссовки (арт. 456123789)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <div class="input-box">
+                    <input type="text" class="input-field" id="user-input" placeholder="Введите артикул или ссылку на товар с Wildberries...">
+                    <button class="send-button" id="send-button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы DOM
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const chatMessages = document.getElementById('chat-messages');
+            const welcomeContainer = document.getElementById('welcome-container');
+            const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            const newChatBtn = document.getElementById('new-chat');
+            const historyList = document.getElementById('history-list');
+            const exampleCards = document.querySelectorAll('.example-card');
+            
+            // Переменные состояния
+            let chart = null;
+            let searchHistory = JSON.parse(localStorage.getItem('whyBuyHistory')) || [];
+            
+            // Инициализация истории поиска
+            updateHistoryDisplay();
+            
+            // Обработчики событий
+            sendButton.addEventListener('click', processUserInput);
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    processUserInput();
+                }
+            });
+            
+            toggleSidebarBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('sidebar-hidden');
+            });
+            
+            newChatBtn.addEventListener('click', function() {
+                userInput.value = '';
+                welcomeContainer.style.display = 'flex';
+                clearProductDisplay();
+            });
+            
+            exampleCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const article = this.getAttribute('data-article');
+                    userInput.value = article;
+                    processUserInput();
+                });
+            });
+            
+            // Функции
+            function processUserInput() {
+                const input = userInput.value.trim();
+                if (!input) return;
+                
+                // Скрыть приветственный экран
+                welcomeContainer.style.display = 'none';
+                
+                // Добавить сообщение пользователя
+                addMessage(input, 'user');
+                
+                // Очистить поле ввода
+                userInput.value = '';
+                
+                // Показать индикатор загрузки
+                const loadingMessage = addMessage('Анализирую отзывы...', 'ai');
+                
+                // Добавить в историю
+                addToHistory(input);
+                
+                // Имитация запроса к API (в реальном приложении здесь будет fetch к Qwen3 API)
+                setTimeout(() => {
+                    // Удалить сообщение о загрузке
+                    loadingMessage.remove();
+                    
+                    // Показать результат анализа
+                    showAnalysisResult(input);
+                }, 2000);
+            }
+            
+            function addMessage(text, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(type === 'user' ? 'user-message' : 'ai-message');
+                messageDiv.textContent = text;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return messageDiv;
+            }
+            
+            function showAnalysisResult(article) {
+                // Генерация случайных данных для демонстрации
+                const positiveReviews = Math.floor(Math.random() * 100) + 50;
+                const negativeReviews = Math.floor(Math.random() * 50);
+                const totalReviews = positiveReviews + negativeReviews;
+                const rating = (4 + Math.random()).toFixed(1);
+                
+                // Создать карточку товара
+                const productCard = document.createElement('div');
+                productCard.classList.add('product-card');
+                productCard.innerHTML = `
+                    <div class="product-header">
+                        <img src="https://via.placeholder.com/120" alt="Товар" class="product-image">
+                        <div class="product-info">
+                            <h3 class="product-title">Товар с артикулом ${article}</h3>
+                            <div class="product-rating">
+                                <i class="fas fa-star" style="color: gold;"></i>
+                                <span>${rating} (${totalReviews} отзывов)</span>
+                            </div>
+                            <div class="product-price">${Math.floor(Math.random() * 10000)} руб.</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="reviews-chart"></canvas>
+                    </div>
+                    <div class="analysis-result">
+                        <div class="recommendation">${positiveReviews > negativeReviews * 2 ? 'Да, стоит покупать' : 'Нет, не стоит покупать'}</div>
+                        <div class="analysis-text">
+                            ${generateAnalysisText(positiveReviews, negativeReviews)}
+                        </div>
+                    </div>
+                `;
+                
+                chatMessages.appendChild(productCard);
+                
+                // Создать диаграмму
+                const ctx = document.getElementById('reviews-chart').getContext('2d');
+                if (chart) {
+                    chart.destroy();
+                }
+                
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Положительные', 'Негативные'],
+                        datasets: [{
+                            label: 'Количество отзывов',
+                            data: [positiveReviews, negativeReviews],
+                            backgroundColor: [
+                                'rgba(16, 163, 127, 0.7)',
+                                'rgba(239, 68, 68, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(16, 163, 127, 1)',
+                                'rgba(239, 68, 68, 1)'
+                            ],
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Анализ отзывов',
+                                color: '#ffffff',
+                                font: {
+                                    size: 16
+                                }
+                            },
+                            legend: {
+                                labels: {
+                                    color: '#ffffff'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#ffffff'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#ffffff'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function generateAnalysisText(positive, negative) {
+                const total = positive + negative;
+                const positivePercentage = Math.round((positive / total) * 100);
+                
+                let text = `На основе анализа ${total} отзывов: `;
+                
+                if (positivePercentage >= 80) {
+                    text += `Товар имеет преобладающее количество положительных отзывов (${positivePercentage}%). Покупатели особенно отмечают высокое качество, соответствие описанию и быструю доставку. `;
+                    text += "Небольшой процент негативных отзывов в основном связан с индивидуальными случаями использования.";
+                } else if (positivePercentage >= 60) {
+                    text += `Товар имеет больше положительных отзывов (${positivePercentage}%), но есть и заметное количество негативных. `;
+                    text += "Покупатели хвалят внешний вид и функциональность, но некоторые отмечают проблемы с упаковкой или несоответствие размеров.";
+                } else if (positivePercentage >= 40) {
+                    text += `Количество положительных и отрицательных отзывов примерно одинаково (${positivePercentage}% положительных). `;
+                    text += "Перед покупкой рекомендуется внимательно изменить размеры и характеристики. Некоторые покупатели остались довольны, другие жаловались на качество материалов.";
+                } else {
+                    text += `Товар имеет преобладающее количество негативных отзывов (только ${positivePercentage}% положительных). `;
+                    text += "Основные жалобы касаются низкого качества, несоответствия описанию и проблем с доставкой. Рекомендуется рассмотреть альтернативные варианты.";
+                }
+                
+                return text;
+            }
+            
+            function addToHistory(query) {
+                // Добавить запрос в историю, если его еще нет
+                if (!searchHistory.includes(query)) {
+                    searchHistory.unshift(query);
+                    // Ограничить историю последними 10 запросами
+                    if (searchHistory.length > 10) {
+                        searchHistory.pop();
+                    }
+                    localStorage.setItem('whyBuyHistory', JSON.stringify(searchHistory));
+                    updateHistoryDisplay();
+                }
+            }
+            
+            function updateHistoryDisplay() {
+                historyList.innerHTML = '';
+                
+                if (searchHistory.length === 0) {
+                    historyList.innerHTML = '<div class="history-item">История поиска пуста</div>';
+                    return;
+                }
+                
+                searchHistory.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.classList.add('history-item');
+                    historyItem.innerHTML = `<i class="fas fa-search"></i> ${item}`;
+                    historyItem.addEventListener('click', function() {
+                        userInput.value = item;
+                        processUserInput();
+                    });
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            function clearProductDisplay() {
+                const productCards = document.querySelectorAll('.product-card');
+                productCards.forEach(card => card.remove());
+                
+                const messages = document.querySelectorAll('.message');
+                messages.forEach(message => message.remove());
+                
+                if (chart) {
+                    chart.destroy();
+                    chart = null;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
